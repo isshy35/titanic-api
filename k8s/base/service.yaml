@@ -1,0 +1,40 @@
+# ClusterIP Service - Internal communication
+apiVersion: v1
+kind: Service
+metadata:
+  name: titanic-api-service
+  namespace: titanic-api
+  labels:
+    app: titanic-api
+spec:
+  type: ClusterIP
+  selector:
+    app: titanic-api
+  ports:
+  - port: 80
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  sessionAffinity: None
+
+---
+# LoadBalancer Service - External access
+apiVersion: v1
+kind: Service
+metadata:
+  name: titanic-api-lb
+  namespace: titanic-api
+  labels:
+    app: titanic-api
+  annotations:
+    # For cloud providers, add annotations here
+    # service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: titanic-api
+  ports:
+  - port: 80
+    targetPort: 5000
+    protocol: TCP
+    name: http
