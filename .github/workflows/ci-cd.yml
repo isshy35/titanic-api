@@ -14,8 +14,9 @@ env:
 jobs:
 
   # ---------------- CI ----------------
+  
   ci:
-    name: Build & Test
+    name: CI - Test, Lint, Build
     runs-on: ubuntu-latest
 
     steps:
@@ -29,17 +30,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Run unit tests
-        run: |
-          pytest tests/unit
+        run: pytest tests/unit --cov=app --cov-report=term
 
       - name: Lint code
-        run: |
-          pip install flake8
-          flake8 .
+        run: flake8 .
 
   # ---------------- BUILD ----------------
   build:
