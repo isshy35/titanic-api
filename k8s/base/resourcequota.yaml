@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: titanic-api-quota
+  namespace: titanic-api
+spec:
+  hard:
+    # Limit total number of pods
+    pods: "50"
+    # Limit total CPU requests
+    requests.cpu: "10"
+    # Limit total memory requests
+    requests.memory: "20Gi"
+    # Limit total CPU limits
+    limits.cpu: "20"
+    # Limit total memory limits
+    limits.memory: "40Gi"
+    # Limit persistent volume claims
+    persistentvolumeclaims: "10"
+    # Limit services
+    services.loadbalancers: "5"
+
+---
+# Limit Range - sets default limits for containers
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: titanic-api-limitrange
+  namespace: titanic-api
+spec:
+  limits:
+  # Container limits
+  - type: Container
+    default:
+      cpu: "200m"
+      memory: "256Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    max:
+      cpu: "1000m"
+      memory: "1Gi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+  # Pod limits
+  - type: Pod
+    max:
+      cpu: "2000m"
+      memory: "2Gi"

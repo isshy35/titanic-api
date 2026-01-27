@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: titanic-api-pdb
+  namespace: titanic-api
+  labels:
+    app: titanic-api
+spec:
+  minAvailable: 2  # At least 2 pods must be available during disruptions
+  selector:
+    matchLabels:
+      app: titanic-api
+  # Alternative: use maxUnavailable instead
+  # maxUnavailable: 1

@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: titanic-api-ingress
+  namespace: titanic-api
+  labels:
+    app: titanic-api
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Set to true in production with cert
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: titanic-api.local  # Change to your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: titanic-api-service
+            port:
+              number: 80
+  # TLS configuration (uncomment when you have certs)
+  # tls:
+  # - hosts:
+  #   - titanic-api.local
+  #   secretName: titanic-api-tls
