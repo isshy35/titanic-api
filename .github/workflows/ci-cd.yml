@@ -35,7 +35,9 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run unit tests
-        run: pytest tests/unit --cov=app --cov-report=term
+        run: |
+          export PYTHONPATH=$(pwd)
+          pytest tests/unit --cov=app --cov-report=term
 
       - name: Lint code
         run: flake8 .
