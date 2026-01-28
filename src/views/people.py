@@ -81,7 +81,8 @@ def get_by_id(person_uuid: str) -> Response:
 @people_api.route("people", methods=["POST"])
 def add_passenger() -> Response:
     """
-    Endpoint adding a new person to the database based on the JSON payload of the request
+        Endpoint adding a new person to the database
+    based on the JSON payload of the request.
 
     Returns:
         Response containing the added person
