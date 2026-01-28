@@ -37,7 +37,7 @@ After you have database server deployed and running, use environment variable `D
 DATABASE_URL=postgresql+psycopg2://user:password@127.0.0.1:5432/postgres python run.py
 ```
 
-Go to <http://127.0.0.1:5000/> in your browser.
+Go to <http://127.0.0.1:5000/> in your browser..
 
 Test it by:
 1) See the database is currently empty with: `http://127.0.0.1:5000/people`
