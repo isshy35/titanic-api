@@ -4,4 +4,3 @@ metadata:
   name: titanic-api
   labels:
     name: titanic-api
-    environment: production

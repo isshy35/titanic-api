@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: titanic-api-prod
+
+resources:
+  - ../../base
+
+namePrefix: prod-
+
+commonLabels:
+  environment: production
+
+replicas:
+  - name: titanic-api
+    count: 5
+
+images:
+  - name: titanic-api
+    newName: ghcr.io/YOUR_GITHUB_USERNAME/titanic-api
+    newTag: prod-latest
+
+configMapGenerator:
+  - name: titanic-api-config
+    behavior: merge
+    literals:
+      - FLASK_ENV=production
+      - LOG_LEVEL=WARNING
+
+patchesStrategicMerge:
+  - deployment-patch.yaml
