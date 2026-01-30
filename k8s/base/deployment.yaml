@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: titanic-api
+  namespace: titanic-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: titanic-api
+  template:
+    metadata:
+      labels:
+        app: titanic-api
+    spec:
+      containers:
+        - name: titanic-api
+          image: titanic-api:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: titanic-api-config
+                  key: DATABASE_HOST
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: titanic-api-config
+                  key: DATABASE_PORT
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: titanic-api-config
+                  key: DATABASE_NAME
+            - name: FLASK_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: titanic-api-config
+                  key: FLASK_ENV
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: titanic-api-config
+                  key: LOG_LEVEL

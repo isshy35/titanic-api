@@ -1,20 +1,24 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources:
-  - 00-namespace.yaml
-  - 01-configmap.yaml
-  - 02-secret.yaml
-  - 03-postgres-pvc.yaml
-  - 04-postgres.yaml
-  - 05-deployment.yaml
-  - 06-service.yaml
-  - 07-hpa.yaml
-  - 08-pdb.yaml
-  - 09-network-policy.yaml
-  - 10-resourcequota.yaml
+namespace: titanic-api
 
-labels:
-  - pairs:
-      app: titanic-api
-      managed-by: kustomize
+# ConfigMap generator for base environment
+configMapGenerator:
+  - name: titanic-api-config
+    literals:
+      - DATABASE_HOST=postgres-service
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=titanic
+      - FLASK_ENV=production
+      - LOG_LEVEL=INFO
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - postgres.yaml
+  - postgres-pvc.yaml
+  - networkpolicy.yaml
+  - pdb.yaml
+  - resourcequota.yaml
+  - hpa.yaml
