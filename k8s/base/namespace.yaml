@@ -1,6 +1,23 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: titanic-api
+  name: titanic-api-dev
   labels:
     name: titanic-api
+    environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: titanic-api-staging
+  labels:
+    name: titanic-api
+    environment: staging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: titanic-api-prod
+  labels:
+    name: titanic-api
+    environment: production

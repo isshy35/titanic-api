@@ -15,7 +15,7 @@ jobs:
   # ---------------- CI ----------------
   ci:
     name: CI - Test, Lint, Build
-    runs-on: ubuntu-latest  # Keep CI on GitHub runners (faster, cleaner)
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
@@ -25,6 +25,18 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+          cache: 'pip'
+      
+      # Cache pip dependencies
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.local
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       
       - name: Install dependencies
         run: |
@@ -43,7 +55,7 @@ jobs:
   # ---------------- BUILD ----------------
   build:
     name: Build & Push Image
-    runs-on: ubuntu-latest  # Keep build on GitHub runners
+    runs-on: ubuntu-latest
     needs: ci
     permissions:
       contents: read
@@ -73,11 +85,13 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:dev-latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
 
   # ---------------- DEPLOY TO DEV (Self-Hosted) ----------------
   deploy-dev:
     name: Deploy to Dev (Minikube)
-    runs-on: self-hosted  # Changed to self-hosted
+    runs-on: self-hosted
     needs: build
     if: github.ref == 'refs/heads/develop'
     environment:
@@ -88,30 +102,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      # Cache Kubernetes tools
+      - name: Cache Kubernetes tools
+        uses: actions/cache@v3
+        id: k8s-tools-cache
+        with:
+          path: |
+            /usr/local/bin/kubectl
+            /usr/local/bin/kustomize
+          key: ${{ runner.os }}-k8s-tools-v1
+      
       - name: Verify tools are installed
+        if: steps.k8s-tools-cache.outputs.cache-hit != 'true'
         run: |
-          echo "Checking required tools..."
+          echo "Installing Kubernetes tools..."
           
-          # Check kubectl
+          # Install kubectl
           if ! command -v kubectl &> /dev/null; then
             echo "Installing kubectl..."
             curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
             chmod +x kubectl
             sudo mv kubectl /usr/local/bin/
           fi
-          kubectl version --client
           
-          # Check kustomize
+          # Install kustomize
           if ! command -v kustomize &> /dev/null; then
             echo "Installing kustomize..."
             curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
             sudo mv kustomize /usr/local/bin/
           fi
+      
+      - name: Verify installations
+        run: |
+          kubectl version --client
           kustomize version
       
       - name: Verify Minikube is running
         run: |
-          if ! minikube status | grep -q "Running"; then
+          if ! minikube status &> /dev/null; then
             echo "Starting Minikube..."
             minikube start --cpus=4 --memory=8192
           else
@@ -121,14 +149,22 @@ jobs:
       
       - name: Pull and load image to Minikube
         run: |
-          echo "Pulling image from Docker Hub..."
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}"
+          
+          echo "Pulling image: $IMAGE"
+          docker pull $IMAGE
           
           echo "Loading image into Minikube..."
-          minikube image load ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
+          minikube image load $IMAGE
           
           # Verify image is loaded
+          echo "Verifying image in Minikube..."
           minikube image ls | grep titanic-api
+      
+      - name: Create namespace
+        run: |
+          echo "Creating namespace if it doesn't exist..."
+          kubectl create namespace titanic-api-dev --dry-run=client -o yaml | kubectl apply -f -
       
       - name: Update kustomization with new image
         run: |
@@ -138,7 +174,7 @@ jobs:
           kustomize edit set image titanic-api=${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
           
           # Show what will be applied
-          echo "Generated manifests:"
+          echo "=== Generated manifests ==="
           kustomize build .
       
       - name: Deploy to Kubernetes
@@ -146,47 +182,71 @@ jobs:
           echo "Applying Kubernetes manifests..."
           kubectl apply -k k8s/overlays/dev
           
+          echo "Checking what was created..."
+          kubectl get all -n titanic-api-dev
+          
+          echo "Finding deployment..."
+          DEPLOYMENT=$(kubectl get deployment -n titanic-api-dev -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          
+          if [ -z "$DEPLOYMENT" ]; then
+            echo "❌ Error: No deployment found in namespace titanic-api-dev"
+            echo "Resources in namespace:"
+            kubectl get all -n titanic-api-dev
+            exit 1
+          fi
+          
+          echo "Found deployment: $DEPLOYMENT"
           echo "Waiting for deployment to complete..."
-          kubectl rollout status deployment/dev-titanic-api -n titanic-api-dev --timeout=5m
+          kubectl rollout status deployment/$DEPLOYMENT -n titanic-api-dev --timeout=5m
       
       - name: Verify deployment
         run: |
-          echo "Checking pods..."
-          kubectl get pods -n titanic-api-dev
+          echo "=== Checking pods ==="
+          kubectl get pods -n titanic-api-dev -o wide
           
-          echo "Checking services..."
+          echo ""
+          echo "=== Checking services ==="
           kubectl get svc -n titanic-api-dev
           
-          echo "Getting service URL..."
-          minikube service dev-titanic-api-service -n titanic-api-dev --url || true
+          echo ""
+          echo "=== Getting service URL ==="
+          minikube service list -n titanic-api-dev || true
       
       - name: Health check
         run: |
           echo "Running health check..."
-          POD=$(kubectl get pod -n titanic-api-dev -l app=titanic-api -o jsonpath='{.items[0].metadata.name}')
+          
+          # Wait for at least one pod to be ready
+          kubectl wait --for=condition=ready pod -l app=titanic-api -n titanic-api-dev --timeout=2m || true
+          
+          POD=$(kubectl get pod -n titanic-api-dev -l app=titanic-api -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
           
           if [ -n "$POD" ]; then
             echo "Testing health endpoint in pod: $POD"
-            kubectl exec -n titanic-api-dev $POD -- curl -f http://localhost:5000/health || echo "Health check failed"
+            kubectl exec -n titanic-api-dev $POD -- curl -f http://localhost:5000/health || echo "⚠️  Health check failed"
           else
-            echo "No pods found"
+            echo "⚠️  No pods found for health check"
           fi
       
       - name: Display deployment info
         if: always()
         run: |
-          echo "=== Deployment Summary ==="
+          echo "=== DEPLOYMENT SUMMARY ==="
           echo "Image: ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}"
           echo "Namespace: titanic-api-dev"
+          echo "Time: $(date)"
           echo ""
           echo "=== Pods ==="
           kubectl get pods -n titanic-api-dev -o wide
           echo ""
+          echo "=== Deployments ==="
+          kubectl get deployments -n titanic-api-dev
+          echo ""
           echo "=== Services ==="
           kubectl get svc -n titanic-api-dev
           echo ""
-          echo "=== Events (last 10) ==="
-          kubectl get events -n titanic-api-dev --sort-by='.lastTimestamp' | tail -10
+          echo "=== Recent Events ==="
+          kubectl get events -n titanic-api-dev --sort-by='.lastTimestamp' | tail -15
 
   # ---------------- DEPLOY TO STAGING (Self-Hosted) ----------------
   deploy-staging:
@@ -202,10 +262,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Create namespace
+        run: |
+          kubectl create namespace titanic-api-staging --dry-run=client -o yaml | kubectl apply -f -
+      
       - name: Pull and load image to Minikube
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
-          minikube image load ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}"
+          docker pull $IMAGE
+          minikube image load $IMAGE
       
       - name: Update kustomization
         run: |
@@ -215,13 +280,23 @@ jobs:
       - name: Deploy to Staging
         run: |
           kubectl apply -k k8s/overlays/staging
-          kubectl rollout status deployment/staging-titanic-api -n titanic-api-staging --timeout=5m
+          
+          # Find deployment dynamically
+          DEPLOYMENT=$(kubectl get deployment -n titanic-api-staging -o jsonpath='{.items[0].metadata.name}')
+          echo "Found deployment: $DEPLOYMENT"
+          
+          kubectl rollout status deployment/$DEPLOYMENT -n titanic-api-staging --timeout=5m
       
       - name: Run smoke tests
         run: |
           echo "Running smoke tests..."
-          POD=$(kubectl get pod -n titanic-api-staging -l app=titanic-api -o jsonpath='{.items[0].metadata.name}')
-          kubectl exec -n titanic-api-staging $POD -- curl -f http://localhost:5000/health
+          kubectl wait --for=condition=ready pod -l app=titanic-api -n titanic-api-staging --timeout=2m || true
+          
+          POD=$(kubectl get pod -n titanic-api-staging -l app=titanic-api -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+          
+          if [ -n "$POD" ]; then
+            kubectl exec -n titanic-api-staging $POD -- curl -f http://localhost:5000/health
+          fi
 
   # ---------------- DEPLOY TO PROD (Self-Hosted with Approval) ----------------
   deploy-prod:
@@ -237,15 +312,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Create namespace
+        run: |
+          kubectl create namespace titanic-api-prod --dry-run=client -o yaml | kubectl apply -f -
+      
       - name: Create backup of current deployment
         run: |
           echo "Creating backup..."
-          kubectl get deployment prod-titanic-api -n titanic-api-prod -o yaml > /tmp/deployment-backup-$(date +%Y%m%d-%H%M%S).yaml || echo "No existing deployment to backup"
+          BACKUP_FILE="/tmp/deployment-backup-$(date +%Y%m%d-%H%M%S).yaml"
+          
+          if kubectl get deployment -n titanic-api-prod &> /dev/null; then
+            kubectl get deployment -n titanic-api-prod -o yaml > $BACKUP_FILE
+            echo "✅ Backup saved to: $BACKUP_FILE"
+          else
+            echo "ℹ️  No existing deployment to backup"
+          fi
       
       - name: Pull and load image to Minikube
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
-          minikube image load ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
+          IMAGE="${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}"
+          docker pull $IMAGE
+          minikube image load $IMAGE
       
       - name: Update kustomization
         run: |
@@ -255,25 +342,40 @@ jobs:
       - name: Deploy to Production
         run: |
           kubectl apply -k k8s/overlays/prod
-          kubectl rollout status deployment/prod-titanic-api -n titanic-api-prod --timeout=10m
+          
+          # Find deployment dynamically
+          DEPLOYMENT=$(kubectl get deployment -n titanic-api-prod -o jsonpath='{.items[0].metadata.name}')
+          echo "Found deployment: $DEPLOYMENT"
+          
+          kubectl rollout status deployment/$DEPLOYMENT -n titanic-api-prod --timeout=10m
       
       - name: Comprehensive health check
         run: |
           echo "Running comprehensive health checks..."
           
-          # Check all pods are ready
+          # Wait for all pods to be ready
           kubectl wait --for=condition=ready pod -l app=titanic-api -n titanic-api-prod --timeout=5m
           
-          # Test health endpoint
-          POD=$(kubectl get pod -n titanic-api-prod -l app=titanic-api -o jsonpath='{.items[0].metadata.name}')
-          kubectl exec -n titanic-api-prod $POD -- curl -f http://localhost:5000/health
+          # Test health endpoint on all pods
+          PODS=$(kubectl get pod -n titanic-api-prod -l app=titanic-api -o jsonpath='{.items[*].metadata.name}')
+          
+          for POD in $PODS; do
+            echo "Testing pod: $POD"
+            kubectl exec -n titanic-api-prod $POD -- curl -f http://localhost:5000/health
+          done
+          
+          echo "✅ All health checks passed!"
       
       - name: Rollback on failure
         if: failure()
         run: |
-          echo "Deployment failed! Rolling back..."
-          kubectl rollout undo deployment/prod-titanic-api -n titanic-api-prod
-          kubectl rollout status deployment/prod-titanic-api -n titanic-api-prod
+          echo "❌ Deployment failed! Rolling back..."
+          
+          DEPLOYMENT=$(kubectl get deployment -n titanic-api-prod -o jsonpath='{.items[0].metadata.name}')
+          kubectl rollout undo deployment/$DEPLOYMENT -n titanic-api-prod
+          kubectl rollout status deployment/$DEPLOYMENT -n titanic-api-prod --timeout=5m
+          
+          echo "✅ Rollback completed"
       
       - name: Production deployment summary
         if: always()
@@ -283,4 +385,8 @@ jobs:
           echo "Time: $(date)"
           echo "Actor: ${{ github.actor }}"
           echo ""
+          echo "=== All Resources ==="
           kubectl get all -n titanic-api-prod
+          echo ""
+          echo "=== Deployment Details ==="
+          kubectl describe deployment -n titanic-api-prod
