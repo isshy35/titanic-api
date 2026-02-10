@@ -1,13 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Use a dedicated namespace for dev
 namespace: titanic-api-dev
 
 resources:
   - ../../base
 
-# Add name prefix to all resources
 namePrefix: dev-
 
 labels:
@@ -30,5 +28,6 @@ configMapGenerator:
       - FLASK_ENV=development
       - LOG_LEVEL=DEBUG
 
-patches:
-  - path: deployment-patch.yaml
+# Remove or comment out patches
+# patches:
+#   - path: deployment-patch.yaml
