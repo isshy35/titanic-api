@@ -15,9 +15,7 @@ from opentelemetry.instrumentation.flask import FlaskInstrumentor
 # Structured JSON Logging Configuration
 # =====================================================
 handler = logging.StreamHandler()
-formatter = jsonlogger.JsonFormatter(
-    "%(asctime)s %(levelname)s %(name)s %(message)s"
-)
+formatter = jsonlogger.JsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
 handler.setFormatter(formatter)
 
 logger = logging.getLogger()
@@ -28,14 +26,11 @@ logger.setLevel(logging.INFO)
 # Prometheus Metrics
 # =====================================================
 REQUEST_COUNT = Counter(
-    "http_requests_total",
-    "Total HTTP requests",
-    ["method", "endpoint", "status"]
+    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status"]
 )
 
 REQUEST_LATENCY = Histogram(
-    "http_request_duration_seconds",
-    "Request latency in seconds"
+    "http_request_duration_seconds", "Request latency in seconds"
 )
 
 # =====================================================
@@ -44,14 +39,9 @@ REQUEST_LATENCY = Histogram(
 trace.set_tracer_provider(TracerProvider())
 
 # Change the endpoint to your OTEL collector if not local
-exporter = OTLPSpanExporter(
-    endpoint="http://localhost:4317",
-    insecure=True
-)
+exporter = OTLPSpanExporter(endpoint="http://localhost:4317", insecure=True)
 
-trace.get_tracer_provider().add_span_processor(
-    BatchSpanProcessor(exporter)
-)
+trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(exporter))
 
 tracer = trace.get_tracer(__name__)
 
@@ -62,6 +52,7 @@ app = Flask(__name__)
 
 # Instrument Flask app for automatic tracing
 FlaskInstrumentor().instrument_app(app)
+
 
 # =====================================================
 # Middleware for Prometheus metrics
@@ -75,15 +66,12 @@ def start_timer():
 def record_metrics(response):
     duration = time.time() - request.start_time
 
-    REQUEST_COUNT.labels(
-        request.method,
-        request.path,
-        response.status_code
-    ).inc()
+    REQUEST_COUNT.labels(request.method, request.path, response.status_code).inc()
 
     REQUEST_LATENCY.observe(duration)
 
     return response
+
 
 # =====================================================
 # Routes
@@ -113,6 +101,7 @@ def predict():
         # Placeholder logic for prediction
         result = {"survived": True}
         return jsonify(result=result)
+
 
 # =====================================================
 # App start
