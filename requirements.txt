@@ -2,3 +2,7 @@ Flask==2.3.3
 Werkzeug==2.3.7
 psycopg2-binary==2.9.9
 requests==2.31.0
+
+opentelemetry-sdk
+opentelemetry-exporter-otlp
+opentelemetry-instrumentation-flask

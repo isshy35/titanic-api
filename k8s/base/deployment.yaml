@@ -12,6 +12,11 @@ spec:
     metadata:
       labels:
         app: titanic-api
+      annotations:
+        # Prometheus scraping
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: titanic-api
@@ -44,3 +49,24 @@ spec:
                 configMapKeyRef:
                   name: titanic-api-config
                   key: LOG_LEVEL
+          # Optional: resource requests/limits
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          # Optional: health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
