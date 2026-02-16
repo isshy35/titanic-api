@@ -8,3 +8,8 @@ aws/
 awscliv2.zip
 venv-dev/
 venv-dev/
+__pycache__/
+*.pyc
+venv-dev/
+.terraform/
+*.egg-info
