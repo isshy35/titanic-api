@@ -83,22 +83,7 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: 1
 
-                # ---------------- IMAGE SCAN WITHOUT DOCKER ----------------
-      - name: Export image layers to directory
-        run: |
-          mkdir image-layers
-          tar -xf titanic-api.tar -C image-layers
-
-      - name: Scan image filesystem
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: ./image-layers
-          severity: CRITICAL,HIGH
-          exit-code: 1
-          format: table
-
-
+           
       # ---------------- PUSH ONLY IF SAFE ----------------
       - name: Push image
         run: |
