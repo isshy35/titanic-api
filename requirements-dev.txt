@@ -1,17 +1,12 @@
-# Testing
+
 pytest==8.0.2
 pytest-cov==4.1.0
-
-# Linting / code style
-black==23.12.1
 flake8==7.0.0
 pylint==3.0.0
+black==23.12.1
 isort==5.12.0
 mypy==1.5.1
-
-# Security / static analysis
 bandit==1.7.6
-safety==2.3.5
 
-# Include runtime requirements as dev dependencies
+# Include runtime dependencies
 -r requirements.txt
