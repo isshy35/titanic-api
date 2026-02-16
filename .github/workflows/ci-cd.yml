@@ -83,11 +83,16 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: 1
 
-      # ---------------- IMAGE SCAN ----------------
-      - name: Scan Docker image
+            # ---------------- IMAGE SCAN (without Docker access) ----------------
+      - name: Save image as tar
+        run: |
+          docker save ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }} -o titanic-api.tar
+
+      - name: Scan image tarball with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/titanic-api:${{ github.sha }}
+          scan-type: image
+          scan-ref: ./titanic-api.tar
           severity: CRITICAL,HIGH
           exit-code: 1
           format: table
