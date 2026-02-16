@@ -70,3 +70,10 @@ spec:
               port: 5000
             initialDelaySeconds: 5
             periodSeconds: 10
+securityContext:
+  runAsNonRoot: true
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
