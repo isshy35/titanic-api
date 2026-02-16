@@ -12,3 +12,6 @@ prometheus_client==0.17.0   # add this line here if metrics are only dev/test
 python-json-logger==2.0.7
 opentelemetry-api==1.16.0
 opentelemetry-sdk==1.16.0
+opentelemetry-exporter-otlp==1.16.0
+opentelemetry-instrumentation-flask==0.37b0
+opentelemetry-semantic-conventions==0.37b0
