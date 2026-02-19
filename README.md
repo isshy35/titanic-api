@@ -6,8 +6,11 @@ This project demonstrates the end-to-end implementation of a production-ready cl
 The platform is designed to ensure:
 
 Scalabiliy and high availability
+
 Security and compliance readiness
+
 Operational visibility and monitoring
+
 Automated deployment and recovery
 
 🏗 Architecture & Tooling
@@ -15,12 +18,19 @@ Automated deployment and recovery
 Core Stack
 
 Containerization: Docker
+
 Orchestration: Kubernetes
+
 Cloud: Amazon Web Services
+
 Infrastructure as Code: Terraform
+
 CI/CD: GitHub Actions
+
 Monitoring: Prometheus
+
 Visualization: Grafana
+
 Logging: Grafana Loki
 
 ⚙️ DevOps Implementation
