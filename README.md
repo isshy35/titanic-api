@@ -1,4 +1,5 @@
 Titanic API DevOps Platform
+
 📌 Project Overview
 
 This project demonstrates the end-to-end implementation of a production-ready cloud-native platform for the Titanic API. It integrates containerization, Kubernetes orchestration, CI/CD automation, observability, infrastructure automation, security hardening, and disaster recovery.
