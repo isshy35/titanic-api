@@ -34,6 +34,7 @@ Visualization: Grafana
 Logging: Grafana Loki
 
 ⚙️ DevOps Implementation
+
 Part 1 — Containerization & Local Development
 
 Dockerized Flask API
