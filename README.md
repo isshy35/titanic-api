@@ -1,3 +1,106 @@
+Titanic API DevOps Platform
+📌 Project Overview
+
+This project demonstrates the end-to-end implementation of a production-ready cloud-native platform for the Titanic API. It integrates containerization, Kubernetes orchestration, CI/CD automation, observability, infrastructure automation, security hardening, and disaster recovery.
+
+The platform is designed to ensure:
+
+Scalabiliy and high availability
+Security and compliance readiness
+Operational visibility and monitoring
+Automated deployment and recovery
+
+🏗 Architecture & Tooling
+
+Core Stack
+
+Containerization: Docker
+Orchestration: Kubernetes
+Cloud: Amazon Web Services
+Infrastructure as Code: Terraform
+CI/CD: GitHub Actions
+Monitoring: Prometheus
+Visualization: Grafana
+Logging: Grafana Loki
+
+⚙️ DevOps Implementation
+Part 1 — Containerization & Local Development
+
+Dockerized Flask API
+Docker Compose for local environment
+Environment-based configuration
+
+Result: consistent and portable development environment.
+
+Part 2 — Kubernetes Deployment
+
+Kubernetes manifests & overlays
+Namespaces & service exposure
+Resource management & scaling readiness
+
+Result: scalable container orchestration.
+
+Part 3 — CI/CD Pipeline
+
+Automated build & testing
+Image build & registry push
+Kubernetes deployment automation
+
+Result: continuous integration and delivery.
+
+Part 4 — Observability & Monitoring
+
+Metrics collection with Prometheus
+Grafana dashboards
+Centralized logging with Loki
+Alerting for system health
+
+Result: full system visibility and proactive alerting.
+
+Part 5 — Infrastructure as Code
+
+AWS infrastructure provisioning using Terraform
+Remote state management
+Environment separation & reproducibility
+
+Result: version-controlled and repeatable infrastructure.
+
+Part 6 — Security & Compliance
+
+Kubernetes Network Policies
+RBAC & least-privilege access
+Secure secrets management practices
+Container security considerations
+
+Result: hardened and compliance-ready platform.
+
+Part 7 — Disaster Recovery & Backup
+
+Backup Strategy
+Automated database backups
+Retention & lifecycle policies
+Point-in-time recovery capability
+Kubernetes configuration backup
+
+Disaster Recovery
+
+RTO: 15 minutes
+RPO: ≤ 5 minutes
+Multi-AZ high availability
+Failover procedures & recovery testing
+
+Result: business continuity and rapid recovery.
+
+🚀 Deployment Workflow
+
+Developer pushes code
+CI pipeline builds & tests
+Container image is built & pushed
+Kubernetes deployment updated
+Monitoring & alerts track system health
+
+
+💻 Local Development & API Setup
 # titanic-api: Flask
 
 Implemented using [Flask][] microframework.
