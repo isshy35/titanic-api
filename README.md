@@ -37,7 +37,9 @@ Logging: Grafana Loki
 Part 1 — Containerization & Local Development
 
 Dockerized Flask API
+
 Docker Compose for local environment
+
 Environment-based configuration
 
 Result: consistent and portable development environment.
@@ -45,7 +47,9 @@ Result: consistent and portable development environment.
 Part 2 — Kubernetes Deployment
 
 Kubernetes manifests & overlays
+
 Namespaces & service exposure
+
 Resource management & scaling readiness
 
 Result: scalable container orchestration.
@@ -53,7 +57,9 @@ Result: scalable container orchestration.
 Part 3 — CI/CD Pipeline
 
 Automated build & testing
+
 Image build & registry push
+
 Kubernetes deployment automation
 
 Result: continuous integration and delivery.
@@ -61,8 +67,11 @@ Result: continuous integration and delivery.
 Part 4 — Observability & Monitoring
 
 Metrics collection with Prometheus
+
 Grafana dashboards
+
 Centralized logging with Loki
+
 Alerting for system health
 
 Result: full system visibility and proactive alerting.
@@ -70,7 +79,9 @@ Result: full system visibility and proactive alerting.
 Part 5 — Infrastructure as Code
 
 AWS infrastructure provisioning using Terraform
+
 Remote state management
+
 Environment separation & reproducibility
 
 Result: version-controlled and repeatable infrastructure.
@@ -78,8 +89,11 @@ Result: version-controlled and repeatable infrastructure.
 Part 6 — Security & Compliance
 
 Kubernetes Network Policies
+
 RBAC & least-privilege access
+
 Secure secrets management practices
+
 Container security considerations
 
 Result: hardened and compliance-ready platform.
@@ -87,16 +101,23 @@ Result: hardened and compliance-ready platform.
 Part 7 — Disaster Recovery & Backup
 
 Backup Strategy
+
 Automated database backups
+
 Retention & lifecycle policies
+
 Point-in-time recovery capability
+
 Kubernetes configuration backup
 
 Disaster Recovery
 
 RTO: 15 minutes
+
 RPO: ≤ 5 minutes
+
 Multi-AZ high availability
+
 Failover procedures & recovery testing
 
 Result: business continuity and rapid recovery.
@@ -104,9 +125,13 @@ Result: business continuity and rapid recovery.
 🚀 Deployment Workflow
 
 Developer pushes code
+
 CI pipeline builds & tests
+
 Container image is built & pushed
+
 Kubernetes deployment updated
+
 Monitoring & alerts track system health
 
 
